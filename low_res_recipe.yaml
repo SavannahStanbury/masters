@@ -1,0 +1,78 @@
+_include:
+  - omstimelation/oms-cabs.yml 
+
+# override default imaging settings from oms-cabs
+
+        
+cabs:
+  wsclean:
+    command: wsclean
+    inputs:
+      ms:
+        dtype: Union[MS, List[MS]]
+        policies:
+          repeat: repeat
+
+lib:
+  steps:
+    wsclean:
+      base:
+        params:
+          ms: =recipe.ms
+          prefix: '{recipe.image-prefix}'
+          size: 6075
+          scale: 1.5asec          
+
+## this augments the standard 'opts' config section to tweak logging settings
+opts:
+  log:
+    dir: './{root.dir_out}/logs/log-{run.datetime}'
+    name: log-{info.fqname}.txt
+    nest: 2
+    symlink: log
+
+
+low_res_img:
+  name: low resolution image
+  info: "images a MS"
+
+  assign:
+    image-prefix: '{recipe.dir_out}/im{info.suffix}/im{info.suffix}{recipe.suffix}'
+
+  assign_based_on:
+    obs:
+      L1:
+        ms:
+          - /home/stanbury/CaracalWorking/Project/msdir/1617605022_sdp_l0-A141-corr.ms
+          - /home/stanbury/CaracalWorking/Project/msdir/1621062313_sdp_l0-A141-corr.ms
+        dir_out: obs1lb
+        band: L
+  
+  inputs:
+    obs:
+      choices: [L1]
+      info: "Selects observation, see labels above"
+    suffix:
+      dtype: str
+      default: ''
+    dir_out: 
+      dtype: str
+    ms:
+      dtype: List[MS]
+    
+  steps:
+    image-1:
+      info: "tapered image "
+      _use: lib.steps.wsclean.image
+      params: 
+        column: DATA
+        temp_dir: temp_dir 
+        save-source-list: true
+        weight: briggs 0
+        channels-out: 3 
+        pol: I 
+        niter: 100
+        taper-gaussian: 25 #change this
+        auto-mask: 3 
+        threshold: 1e-6 
+        auto-threshold: 0.5
